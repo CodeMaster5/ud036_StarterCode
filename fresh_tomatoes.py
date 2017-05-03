@@ -40,7 +40,15 @@ main_page_head = '''
             padding-top: 20px;
         }
         .movie-tile:hover {
-            background-color: #EEE;
+            background-color: #80dfff;
+            cursor: pointer;
+        }
+        .tv-tile {
+            margin-bottom: 20px;
+            padding-top: 20px;
+        }
+        .tv-tile:hover {
+            background-color: #ff8080;
             cursor: pointer;
         }
         .scale-media {
@@ -75,11 +83,25 @@ main_page_head = '''
               'frameborder': 0
             }));
         });
-        // Animate in the movies when the page loads
+        // Start playing the video whenever the trailer modal is opened
+        $(document).on('click', '.tv-tile', function (event) {
+            var trailerYouTubeId = $(this).attr('data-trailer-youtube-id')
+            var sourceUrl = 'http://www.youtube.com/embed/' + trailerYouTubeId + '?autoplay=1&html5=1';
+            $("#trailer-video-container").empty().append($("<iframe></iframe>", {
+              'id': 'trailer-video',
+              'type': 'text-html',
+              'src': sourceUrl,
+              'frameborder': 0
+            }));
+        });
+        // Animate in the movies and tv shows when the page loads
         $(document).ready(function () {
-          $('.movie-tile').hide().first().show("fast", function showNext() {
+            $('.movie-tile').hide().first().show("fast", function showNext() {
             $(this).next("div").show("fast", showNext);
-          });
+            });
+            $('.tv-tile').hide().first().show("fast", function showNext() {
+              $(this).next("div").show("fast", showNext);
+            });
         });
     </script>
 </head>
@@ -107,13 +129,18 @@ main_page_content = '''
       <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
         <div class="container">
           <div class="navbar-header">
-            <a class="navbar-brand" href="#">Fresh Tomatoes Movie Trailers</a>
+            <a class="navbar-brand" href="#">Fresh Tomatoes Trailers</a>
           </div>
         </div>
       </div>
     </div>
     <div class="container">
+      <h1 align="center">My favorite movies: </h1>
       {movie_tiles}
+    </div>
+    <div class="container">
+      <h1 align="center">My favorite TV shows: </h1>
+      {tv_show_tiles}
     </div>
   </body>
 </html>
@@ -122,9 +149,23 @@ main_page_content = '''
 
 # A single movie entry html template
 movie_tile_content = '''
-<div class="col-md-6 col-lg-4 movie-tile text-center" data-trailer-youtube-id="{trailer_youtube_id}" data-toggle="modal" data-target="#trailer">
-    <img src="{poster_image_url}" width="220" height="342">
+<div class="col-md-6 col-lg-4 movie-tile text-center" data-trailer-youtube-id="{movie_trailer_youtube_id}" data-toggle="modal" data-target="#trailer">
+    <img src="{movie_poster_url}" width="220" height="342">
     <h2>{movie_title}</h2>
+    <h4>Production: {movie_production}</h4>
+    <h5>Synopsis: {movie_synopsis}</h5>
+    <h6>Rating: {movie_rating}/10</h6>
+</div>
+'''
+
+# A single tv show entry html template
+tv_show_tile_content = '''
+<div class="col-md-6 col-lg-4 tv-tile text-center" data-trailer-youtube-id="{tv_show_trailer_youtube_id}" data-toggle="modal" data-target="#trailer">
+    <img src="{tv_show_poster_url}" width="220" height="342">
+    <h2>{tv_show_title}</h2>
+    <h4>Seasons: {tv_shows_seasons}</h4>
+    <h5>Synopsis: {tv_show_synopsis}</h5>
+    <h6>Rating: {tv_show_rating}/10</h6>
 </div>
 '''
 
@@ -138,25 +179,51 @@ def create_movie_tiles_content(movies):
             r'(?<=v=)[^&#]+', movie.trailer_youtube_url)
         youtube_id_match = youtube_id_match or re.search(
             r'(?<=be/)[^&#]+', movie.trailer_youtube_url)
-        trailer_youtube_id = (youtube_id_match.group(0) if youtube_id_match
+        movie_trailer_youtube_id = (youtube_id_match.group(0) if youtube_id_match
                               else None)
 
         # Append the tile for the movie with its content filled in
         content += movie_tile_content.format(
             movie_title=movie.title,
-            poster_image_url=movie.poster_image_url,
-            trailer_youtube_id=trailer_youtube_id
+            movie_production=movie.production,
+            movie_synopsis=movie.synopsis,
+            movie_poster_url=movie.poster_image_url,
+            movie_rating=movie.rating,
+            movie_trailer_youtube_id=movie_trailer_youtube_id
         )
     return content
 
+def create_tv_show_tiles_content(tv_shows):
+    # The HTML content for this section of the page
+    content = ''
+    for tv_show in tv_shows:
+        # Extract the youtube ID from the url
+        youtube_id_match = re.search(
+            r'(?<=v=)[^&#]+', tv_show.trailer_youtube_url)
+        youtube_id_match = youtube_id_match or re.search(
+            r'(?<=be/)[^&#]+', tv_show.trailer_youtube_url)
+        tv_show_trailer_youtube_id = (youtube_id_match.group(0) if youtube_id_match
+                              else None)
 
-def open_movies_page(movies):
+        # Append the tile for the tv with its content filled in
+        content += tv_show_tile_content.format(
+            tv_show_title=tv_show.title,
+            tv_shows_seasons=tv_show.seasons,
+            tv_show_synopsis=tv_show.synopsis,
+            tv_show_poster_url=tv_show.poster_image_url,
+            tv_show_rating=tv_show.rating,
+            tv_show_trailer_youtube_id=tv_show_trailer_youtube_id
+        )
+    return content
+
+def open_movies_page(movies, tv_shows):
     # Create or overwrite the output file
     output_file = open('fresh_tomatoes.html', 'w')
 
-    # Replace the movie tiles placeholder generated content
+    # Replace the movie & tv tiles placeholder generated content
     rendered_content = main_page_content.format(
-        movie_tiles=create_movie_tiles_content(movies))
+    movie_tiles=create_movie_tiles_content(movies),
+    tv_show_tiles=create_tv_show_tiles_content(tv_shows))
 
     # Output the file
     output_file.write(main_page_head + rendered_content)
