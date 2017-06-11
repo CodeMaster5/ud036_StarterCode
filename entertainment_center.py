@@ -26,7 +26,7 @@ tv_urls = [ ["tt3107288", "https://www.youtube.com/watch?v=Yj0l7iGKh8g"],
     the generated Movie is stored in movieList """
 for url in movie_urls:
     #Opens a connection to the imdb database based on the given id
-    connection = urllib.urlopen("http://www.omdbapi.com/?i="+url[0])
+    connection = urllib.urlopen("http://www.omdbapi.com/?i="+url[0] + "&apikey=f1fe9475")
     #Stores the json data from the connection to json_data
     json_data = json.load(connection)
     #Generates the Movie from the json_data and youtube url from url[1]
@@ -41,10 +41,11 @@ for url in movie_urls:
     the generated TV_Show is stored in tvList """
 for url in tv_urls:
     #Opens a connection to the imdb database based on the given id
-    connection = urllib.urlopen("http://www.omdbapi.com/?i="+url[0])
+    connection = urllib.urlopen("http://www.omdbapi.com/?i="+url[0] + "&apikey=f1fe9475")
     #Stores the json data from the connection to json_data
     json_data = json.load(connection)
     #Generates the TV_Show from the json_data and youtube url from url[1]
+    print(json_data)
     tv = media.TV_Show(json_data['Title'], json_data['Plot'],
     json_data['Poster'], url[1], json_data['imdbRating'], json_data['totalSeasons'])
     #Generated TV_Show is added to tvList
